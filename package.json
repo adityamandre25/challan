@@ -1,0 +1,12 @@
+{
+  "name": "helmetdetection-root",
+  "version": "1.0.0",
+  "description": "Orchestrator for Helmet Detection & E-Challan System",
+  "scripts": {
+    "setup": "node setup.js",
+    "dev": "node runner.js",
+    "start": "node runner.js"
+  },
+  "author": "",
+  "license": "ISC"
+}

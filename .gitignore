@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# Environment Variables
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# SQLite Database
+*.db
+*.sqlite3
+
+# Temporary Files
+temp/
+tmp/
+*.tmp
+
+# Generated Images
+plate_crop_*.jpg
+debug_thresh.jpg
+*.png.bak
+
+# Python Packaging
+build/
+dist/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Test Cache
+.pytest_cache/
+
+# Model Training Artifacts
+runs/
+
+# Large ML Files (optional)
+# Uncomment if you don't want models on GitHub
+# *.pt
+
+# Uploaded Media
+uploads/
+
+# Node
+node_modules/
+
+# Vite
+dist/
+.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# Secrets
+.env
+
+# Database
+*.db
+*.sqlite3
+
+# VS Code
+.vscode/
