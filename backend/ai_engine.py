@@ -119,7 +119,7 @@ class AIEngine:
     # Public entry points
     # ------------------------------------------------------------------
 
-    def process_image(self, image_bytes):
+    def process_image(self, image_bytes, location="Camera Zone A"):
         """
         Returns: list of detected_vehicle dicts, plus annotated image b64.
 
@@ -139,12 +139,12 @@ class AIEngine:
             img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             if img is None:
                 return []
-            return self._run_model(img)
+            return self._run_model(img, location)
         except Exception as e:
             print(f"[AI Engine] Image processing error: {e}")
             return []
 
-    def process_video(self, video_path):
+    def process_video(self, video_path, location="Camera Zone A"):
         """
         Returns: list of unique detected_vehicle dicts across all frames.
         Deduplication is by normalised plate number.
@@ -170,7 +170,7 @@ class AIEngine:
                 if frame_count % 5 != 0:
                     continue
 
-                vehicles = self._run_model(frame)
+                vehicles = self._run_model(frame, location)
                 for v in vehicles:
                     plate = v["vehicle_number"]
                     key = plate if plate != "UNKNOWN" else None
@@ -191,7 +191,7 @@ class AIEngine:
     # Core detection
     # ------------------------------------------------------------------
 
-    def _run_model(self, img):
+    def _run_model(self, img, location="Camera Zone A"):
         """
         Runs helmet + plate detection on a single frame.
         Returns list of dicts (one per unique violation+plate pair).
@@ -263,6 +263,34 @@ class AIEngine:
                 print(f"[AI Engine] Plate detection error: {e}")
 
         # ── Step 3: Annotated frame → b64 ────────────────────────────
+        # Draw camera location overlay in bottom-right corner
+        try:
+            height, width = img.shape[:2]
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.6
+            thickness = 2
+            text = f"CAM: {location.upper()}"
+            text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
+            text_width, text_height = text_size
+
+            # Draw a dark background rectangle for the pill
+            padding = 8
+            rect_x1 = width - text_width - padding * 2 - 20
+            rect_y1 = height - text_height - padding * 2 - 20
+            rect_x2 = width - 20
+            rect_y2 = height - 20
+
+            # Draw dark semi-transparent box
+            cv2.rectangle(img, (rect_x1, rect_y1), (rect_x2, rect_y2), (11, 15, 25), -1)
+            # Draw cyan border (BGR: 255, 240, 0)
+            cv2.rectangle(img, (rect_x1, rect_y1), (rect_x2, rect_y2), (255, 240, 0), 1)
+            # Draw text
+            text_x = rect_x1 + padding
+            text_y = rect_y2 - padding
+            cv2.putText(img, text, (text_x, text_y), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
+        except Exception as overlay_err:
+            print(f"[AI Engine] Location overlay error: {overlay_err}")
+
         ok, buf = cv2.imencode(".jpg", img)
         if not ok:
             return []

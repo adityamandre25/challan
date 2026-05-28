@@ -22,16 +22,21 @@ def init_db():
             status TEXT NOT NULL DEFAULT 'Pending'
         )
     """)
+    # Check if location column exists in the table info
+    cursor.execute("PRAGMA table_info(challans)")
+    columns = [col[1] for col in cursor.fetchall()]
+    if "location" not in columns:
+        cursor.execute("ALTER TABLE challans ADD COLUMN location TEXT")
     conn.commit()
     conn.close()
 
-def add_challan(vehicle_number, reason, fine_amount, timestamp, image_data):
+def add_challan(vehicle_number, reason, fine_amount, timestamp, image_data, location="Camera Zone A"):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO challans (vehicle_number, reason, fine_amount, timestamp, image_data, status)
-        VALUES (?, ?, ?, ?, ?, 'Pending')
-    """, (vehicle_number, reason, fine_amount, timestamp, image_data))
+        INSERT INTO challans (vehicle_number, reason, fine_amount, timestamp, image_data, status, location)
+        VALUES (?, ?, ?, ?, ?, 'Pending', ?)
+    """, (vehicle_number, reason, fine_amount, timestamp, image_data, location))
     conn.commit()
     new_id = cursor.lastrowid
     conn.close()
@@ -53,7 +58,8 @@ def get_all_challans():
             "fine_amount": row["fine_amount"],
             "timestamp": row["timestamp"],
             "image_data": row["image_data"],
-            "status": row["status"]
+            "status": row["status"],
+            "location": row["location"] if ("location" in row.keys() and row["location"] is not None) else "Camera Zone A"
         })
     return challans
 

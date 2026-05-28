@@ -99,7 +99,7 @@ export default function ChallanTemplate({ challan, onPay, onClose, showActions =
                   </tr>
                   <tr>
                     <td className="label">Offense Location</td>
-                    <td className="value">Camera Feed #04 - Junction Point 1B</td>
+                    <td className="value">{challan.location || "Camera Zone A"}</td>
                   </tr>
                   <tr>
                     <td className="label">Payment Status</td>

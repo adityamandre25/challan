@@ -2,7 +2,7 @@ import os
 import tempfile
 from datetime import datetime
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -34,6 +34,10 @@ class PayRequest(BaseModel):
     challan_id: int
 
 
+class DeleteRequest(BaseModel):
+    challan_id: int
+
+
 # ─────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────
@@ -46,7 +50,7 @@ def _reason(violation_type: str) -> str:
     return "Helmet violation detected (Section 194D MV Act)"
 
 
-def _build_challans(detected_vehicles: list) -> list:
+def _build_challans(detected_vehicles: list, location: str) -> list:
     """
     Insert one challan per detected vehicle.
     Returns list of challan response dicts.
@@ -72,6 +76,7 @@ def _build_challans(detected_vehicles: list) -> list:
             fine_amount=fine_amount,
             timestamp=timestamp,
             image_data=image_data,
+            location=location,
         )
 
         challans.append(
@@ -84,6 +89,7 @@ def _build_challans(detected_vehicles: list) -> list:
                 "timestamp": timestamp,
                 "image_data": image_data,
                 "violation_crop": crop_data,
+                "location": location,
             }
         )
 
@@ -103,7 +109,7 @@ def get_history():
 
 
 @app.post("/api/upload")
-async def upload_media(file: UploadFile = File(...)):
+async def upload_media(file: UploadFile = File(...), location: str = Form("Camera Zone A")):
     file_bytes = await file.read()
     filename = file.filename
     file_ext = os.path.splitext(filename)[1].lower()
@@ -121,14 +127,14 @@ async def upload_media(file: UploadFile = File(...)):
         detected_vehicles = []
 
         if is_image:
-            detected_vehicles = ai_engine.process_image(file_bytes)
+            detected_vehicles = ai_engine.process_image(file_bytes, location)
 
         else:
             temp_file_path = os.path.join(TEMP_DIR, filename)
             with open(temp_file_path, "wb") as f:
                 f.write(file_bytes)
             try:
-                detected_vehicles = ai_engine.process_video(temp_file_path)
+                detected_vehicles = ai_engine.process_video(temp_file_path, location)
             finally:
                 if os.path.exists(temp_file_path):
                     os.remove(temp_file_path)
@@ -139,7 +145,7 @@ async def upload_media(file: UploadFile = File(...)):
                 "message": "No helmet violation detected.",
             }
 
-        challans = _build_challans(detected_vehicles)
+        challans = _build_challans(detected_vehicles, location)
 
         return {
             "status": "violation",
@@ -183,6 +189,25 @@ def pay_challan(req: PayRequest):
         return {
             "status": "success",
             "message": f"Challan #{req.challan_id} marked as Paid.",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/challan/delete")
+def delete_challan(req: DeleteRequest):
+    try:
+        conn = database.get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM challans WHERE id = ?",
+            (req.challan_id,),
+        )
+        conn.commit()
+        conn.close()
+        return {
+            "status": "success",
+            "message": f"Challan #{req.challan_id} deleted successfully.",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
