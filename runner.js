@@ -3,7 +3,7 @@ const path = require('path');
 
 console.log('=== Starting Helmet Detection & E-Challan System ===');
 
-// Detect Python Command
+
 let pythonCmd = 'python';
 try {
   const { execSync } = require('child_process');
@@ -18,17 +18,17 @@ try {
   }
 }
 
-// Start Backend Process
+
 const backendPath = path.join(__dirname, 'backend');
 console.log(`Starting FastAPI Backend on http://localhost:8000 using ${pythonCmd}...`);
 const backend = spawn(pythonCmd, ['main.py'], { cwd: backendPath, shell: true });
 
-// Start Frontend Process
+
 const frontendPath = path.join(__dirname, 'frontend');
 console.log('Starting Vite Frontend on http://localhost:5173...');
 const frontend = spawn('npm', ['run', 'dev'], { cwd: frontendPath, shell: true });
 
-// Log output helper
+
 const logOutput = (prefix, data) => {
   const lines = data.toString().split('\n');
   lines.forEach(line => {
@@ -44,7 +44,7 @@ backend.stderr.on('data', (data) => logOutput('Backend-Err', data));
 frontend.stdout.on('data', (data) => logOutput('Frontend', data));
 frontend.stderr.on('data', (data) => logOutput('Frontend-Err', data));
 
-// Handle process termination
+
 const cleanup = () => {
   console.log('\nShutting down servers...');
   backend.kill();

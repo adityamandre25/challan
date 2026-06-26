@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Upload, AlertOctagon, ShieldCheck, RefreshCw, Send, CheckCircle2, 
+import {
+  Upload, AlertOctagon, ShieldCheck, RefreshCw, Send, CheckCircle2,
   Sliders, Activity, Flame, TrendingUp, TrendingDown, Target, Info, ShieldAlert
 } from 'lucide-react';
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const PREDEFINED_LOCATIONS = [
   "Silk Board Signal",
@@ -21,11 +23,11 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
   const [confThreshold, setConfThreshold] = useState(0.25);
   const [pipelineState, setPipelineState] = useState('');
 
-  // Per-challan phone + dispatch state: { [challan_id]: { phone, status } }
+
   const [dispatchMap, setDispatchMap] = useState({});
   const fileInputRef = useRef(null);
 
-  // Simulation steps for animated processing state
+
   useEffect(() => {
     if (!uploading) {
       setPipelineState('');
@@ -48,7 +50,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
     return () => clearInterval(interval);
   }, [uploading]);
 
-  // ── Drag helpers ──────────────────────────────────────────────────────
+
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -67,7 +69,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
     if (e.target.files?.[0]) processFile(e.target.files[0]);
   };
 
-  // ── Upload ────────────────────────────────────────────────────────────
+
   const processFile = async (file) => {
     setUploading(true);
     setResult(null);
@@ -81,7 +83,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
     formData.append('location', selectedLocation);
 
     try {
-      const response = await fetch('http://localhost:8000/api/upload', {
+      const response = await fetch(`${API}/api/upload`, {
         method: 'POST',
         body: formData,
       });
@@ -95,7 +97,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
         onNewViolation();
       }
 
-      // Pre-populate dispatchMap with default phone for each challan
+
       if (data.challans) {
         const initial = {};
         data.challans.forEach((c) => {
@@ -112,7 +114,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
     }
   };
 
-  // ── Per-challan dispatch ──────────────────────────────────────────────
+
   const handleDispatch = async (challanId) => {
     const entry = dispatchMap[challanId];
     if (!entry) return;
@@ -123,7 +125,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
     }));
 
     try {
-      const response = await fetch('http://localhost:8000/api/challan/dispatch', {
+      const response = await fetch(`${API}/api/challan/dispatch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ challan_id: challanId, phone_number: entry.phone }),
@@ -158,14 +160,14 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
     setDispatchMap({});
   };
 
-  // ── Analytics & Leaderboard Computations ─────────────────────────────
+
   const hotspotLeaderboard = PREDEFINED_LOCATIONS.map(loc => {
     const locChallans = challans.filter(c => (c.location || 'Camera Zone A') === loc);
     const total = locChallans.length;
     const paid = locChallans.filter(c => c.status === 'Paid').length;
     const pending = total - paid;
-    
-    // Deterministic trend indicator
+
+
     let trend = 'flat';
     if (loc === "Silk Board Signal" || loc === "MG Road Junction") trend = 'up';
     if (loc === "Street 1") trend = 'down';
@@ -179,19 +181,19 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
   return (
     <div className="dashboard-grid">
 
-      {/* ── LEFT COLUMN: Traffic Camera Feed & Controls ──────────────── */}
+      { }
       <div className="left-panel">
         <div className="glass-card feed-card">
           <div className="feed-header">
             <h3 className="card-title">
               <Activity className="text-cyan pulse" size={20} /> Surveillance Camera Intake
             </h3>
-            
-            {/* Camera Location Selection Dropdown */}
+
+            { }
             <div className="location-select-wrapper">
               <span className="select-label font-mono">FEED INTAKE SOURCE:</span>
-              <select 
-                value={selectedLocation} 
+              <select
+                value={selectedLocation}
                 onChange={(e) => setSelectedLocation(e.target.value)}
                 disabled={uploading || previewUrl}
                 className="hud-select"
@@ -223,7 +225,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
               <div className="crosshair tr"></div>
               <div className="crosshair bl"></div>
               <div className="crosshair br"></div>
-              
+
               <Upload className="upload-icon text-cyan" />
               <p className="upload-title font-mono uppercase tracking-wider text-cyan">INJECT SURVEILLANCE FEED</p>
               <p className="upload-info">Drag &amp; drop video logs or photos here</p>
@@ -233,7 +235,16 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
             <div className="preview-layout">
               <div className="media-preview-container futuristic-border">
                 {previewUrl.isVideo ? (
-                  <video src={previewUrl.url} className="preview-media" autoPlay loop muted />
+                  <video
+                    src={previewUrl.url}
+                    className="preview-media"
+                    autoPlay
+                    loop
+                    muted
+
+                    onLoadedData={() => console.log("loaded")}
+                    onError={(e) => console.log("video error", e)}
+                  />
                 ) : (
                   <img
                     src={result?.challans?.[0]?.image_data || previewUrl.url}
@@ -242,29 +253,29 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
                   />
                 )}
 
-                {/* Cyber Bounding Grid corners */}
+                { }
                 <div className="corner-bracket tl"></div>
                 <div className="corner-bracket tr"></div>
                 <div className="corner-bracket bl"></div>
                 <div className="corner-bracket br"></div>
 
-                {/* Animated Scan Line */}
+                { }
                 {uploading && <div className="scanner-line" />}
 
-                {/* Dynamic Camera Location Overlay (Bottom-Right) */}
+                { }
                 <div className="camera-overlay font-mono">
                   <span className="dot pulse-red"></span>
                   FEED: {selectedLocation.toUpperCase()}
                 </div>
 
-                {/* Bounding box confidence display for ML Vibe */}
+                { }
                 {!uploading && result?.status === 'violation' && (
                   <div className="pipeline-overlay font-mono">
                     YOLOv8 CONF: &gt;{(confThreshold * 100).toFixed(0)}%
                   </div>
                 )}
 
-                {/* Status Badges */}
+                { }
                 {uploading && (
                   <span className="status-badge scanning pulse">
                     <RefreshCw size={14} className="spin" />
@@ -294,16 +305,16 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
 
       </div>
 
-      {/* ── RIGHT COLUMN: AI Diagnostics & Leaderboard ─────────────── */}
+      { }
       <div className="right-panel">
-        
-        {/* ── AI Engine Pipeline Status ──────────────────────────────── */}
+
+        { }
         <div className="glass-card result-card">
           <h3 className="card-title">
             <Target className="text-cyan" size={20} /> AI Target Analysis
           </h3>
 
-          {/* Uploading State */}
+          { }
           {uploading && (
             <div className="loader-hud font-mono">
               <div className="spinner-hud" />
@@ -314,7 +325,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
             </div>
           )}
 
-          {/* Empty/Idle State */}
+          { }
           {!uploading && !result && (
             <div className="empty-hud font-mono">
               <ShieldAlert size={36} className="text-muted mb-4 opacity-40" />
@@ -323,7 +334,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
             </div>
           )}
 
-          {/* Clear Feed State */}
+          { }
           {!uploading && result?.status === 'clear' && (
             <div className="clear-hud font-mono">
               <div className="status-header">
@@ -338,10 +349,10 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
             </div>
           )}
 
-          {/* Violation State */}
+          { }
           {!uploading && result?.status === 'violation' && (
             <div className="violations-panel">
-              {/* Alert Header */}
+              { }
               <div className="alert-badge-hud font-mono">
                 <AlertOctagon size={20} className="text-danger animate-pulse" />
                 <div>
@@ -350,15 +361,15 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
                 </div>
               </div>
 
-              {/* Bounding box list */}
+              { }
               <div className="violation-list">
                 {result.challans.map((c, idx) => {
                   const dispatch = dispatchMap[c.challan_id] || { phone: '9876543210', status: null };
-                  // Calculate a dynamic ML confidence level for display
+
                   const confidence = ((c.challan_id * 7 + 84) % 12 + 85);
                   return (
                     <div key={c.challan_id} className="violation-hud-card font-mono">
-                      
+
                       <div className="card-sec-header">
                         <span className="ticket-id text-cyan">TICKET CH-{100000 + c.challan_id}</span>
                         <span className="violation-badge">{c.violation_type.replace(/_/g, ' ').toUpperCase()}</span>
@@ -367,7 +378,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
                       <div className="ocr-plate-block">
                         <div className="plate-col">
                           <span className="hud-label-text">IDENTIFIED PLATE</span>
-                          {/* Premium Indian License Plate Layout */}
+                          { }
                           <div className="license-plate-ui">
                             <div className="plate-ind">IND</div>
                             <div className="plate-number">{c.vehicle_number}</div>
@@ -388,7 +399,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
                         <span className="val text-cyan">{confidence}%</span>
                       </div>
 
-                      {/* SMS Dispatch */}
+                      { }
                       <div className="sms-dispatch-block">
                         {dispatch.status !== 'sent' ? (
                           <div className="dispatch-input-row">
@@ -427,7 +438,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
           )}
         </div>
 
-        {/* ── VIOLATION HOTSPOTS LEADBOARD SECTION ──────────────────── */}
+        { }
         <div className="glass-card mt-6">
           <div className="leaderboard-header font-mono">
             <h3 className="card-title font-sans">
@@ -440,7 +451,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
               </div>
             )}
           </div>
-          
+
           <p className="card-subtitle-hud text-muted font-mono text-xs mb-4">
             Camera zone rank list calculated by ticket dispatch volume.
           </p>
@@ -453,8 +464,8 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
                   <div className="row-meta">
                     <span className="rank-num text-cyan">#{idx + 1}</span>
                     <span className="zone-name" title={item.name}>{item.name}</span>
-                    
-                    {/* Heat Indicator Badge */}
+
+                    { }
                     {item.total > 15 ? (
                       <span className="heat-badge danger">CRITICAL</span>
                     ) : item.total >= 8 ? (
@@ -465,7 +476,7 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
                       <span className="heat-badge success">LOW</span>
                     )}
 
-                    {/* Trend Arrows */}
+                    { }
                     <span className="trend-indicator-hud">
                       {item.trend === 'up' && <TrendingUp size={14} className="text-danger" />}
                       {item.trend === 'down' && <TrendingDown size={14} className="text-success" />}
@@ -473,12 +484,12 @@ export default function LiveDashboard({ challans = [], onNewViolation }) {
                     </span>
                   </div>
 
-                  {/* Visual Progress Bar & Values */}
+                  { }
                   <div className="row-chart">
                     <div className="progress-bar-hud">
                       <div className="fill fill-orange" style={{ width: `${percentage}%` }}></div>
                     </div>
-                    
+
                     <div className="row-vals text-xs">
                       <span>Violations: <strong className="text-white">{item.total}</strong></span>
                       <span className="val-sep">|</span>

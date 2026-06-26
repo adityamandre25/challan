@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  Calendar, Eye, Download, Search, SlidersHorizontal, ArrowUpDown, 
+import {
+  Calendar, Eye, Download, Search, SlidersHorizontal, ArrowUpDown,
   MapPin, CheckCircle, AlertTriangle, ShieldAlert, Award, Trash2
 } from 'lucide-react';
 
@@ -21,24 +21,24 @@ export default function HistoryGrid({ challans, onView, onDownload, onDelete }) 
     );
   }
 
-  // ── Filtering logic ──────────────────────────────────────────────────
+  
   const filteredChallans = challans.filter(c => {
-    const matchesSearch = 
+    const matchesSearch =
       c.vehicle_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.reason || '').toLowerCase().includes(searchTerm.toLowerCase());
-      
-    const matchesStatus = 
-      statusFilter === 'All' || 
+
+    const matchesStatus =
+      statusFilter === 'All' ||
       c.status.toLowerCase() === statusFilter.toLowerCase();
 
     return matchesSearch && matchesStatus;
   });
 
-  // ── Sorting logic ────────────────────────────────────────────────────
+  
   const sortedChallans = [...filteredChallans].sort((a, b) => {
     if (sortBy === 'date_desc') {
-      return b.id - a.id; // higher ID is more recent
+      return b.id - a.id; 
     }
     if (sortBy === 'date_asc') {
       return a.id - b.id;
@@ -65,17 +65,17 @@ export default function HistoryGrid({ challans, onView, onDownload, onDelete }) 
 
   return (
     <div className="history-section">
-      
-      {/* ── High-Tech Filter & Sort Control Toolbar ─────────────────── */}
+
+      {}
       <div className="toolbar-hud glass-card font-mono mb-6">
         <div className="toolbar-left">
           <div className="search-hud-wrapper">
             <Search className="search-icon" size={16} />
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="SEARCH VEHICLE PLATE / LOCATION / TICKET..." 
+              placeholder="SEARCH VEHICLE PLATE / LOCATION / TICKET..."
               className="toolbar-search-input"
             />
           </div>
@@ -97,8 +97,8 @@ export default function HistoryGrid({ challans, onView, onDownload, onDelete }) 
         <div className="toolbar-right">
           <SlidersHorizontal size={14} className="text-cyan" />
           <span className="toolbar-label">SORT BY:</span>
-          <select 
-            value={sortBy} 
+          <select
+            value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             className="toolbar-select-hud"
           >
@@ -113,21 +113,21 @@ export default function HistoryGrid({ challans, onView, onDownload, onDelete }) 
         </div>
       </div>
 
-      {/* ── Smart Enforcement Records Results Count ─────────────────── */}
+      {}
       <div className="results-count-hud font-mono mb-4 text-xs">
-        SCANNED NODES: <span className="text-cyan">{sortedChallans.length}</span> / {challans.length} VERIFIED INCIDENTS
+
       </div>
 
-      {/* ── Enforcement Grid ────────────────────────────────────────── */}
+      {}
       <div className="history-grid">
         {sortedChallans.map((challan) => {
-          // Calculate deterministic ML confidence score for display
-          const confidence = ((challan.id * 7 + 84) % 12 + 85);
           
+          const confidence = ((challan.id * 7 + 84) % 12 + 85);
+
           return (
             <div key={challan.id} className="challan-card futuristic-border">
-              
-              {/* Media Evidence Frame */}
+
+              {}
               <div className="challan-card-media">
                 {challan.image_data ? (
                   <img src={challan.image_data} alt="Violation Evidence" className="challan-card-image" />
@@ -137,9 +137,9 @@ export default function HistoryGrid({ challans, onView, onDownload, onDelete }) 
                     NO PHOTO EVIDENCE
                   </div>
                 )}
-                
-                {/* Deletion Overlay Icon */}
-                <button 
+
+                {}
+                <button
                   className="delete-card-overlay-btn"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -149,28 +149,28 @@ export default function HistoryGrid({ challans, onView, onDownload, onDelete }) 
                 >
                   <Trash2 size={13} />
                 </button>
-                
-                {/* Visual Location Overlay Badge */}
+
+                {}
                 <span className="media-location-overlay font-mono">
                   {challan.location ? challan.location.toUpperCase() : "CAMERA ZONE A"}
                 </span>
 
-                {/* Status Badge */}
+                {}
                 <span className={`challan-card-badge ${challan.status === 'Paid' ? 'paid' : ''}`}>
                   {challan.status === 'Paid' ? 'PAID' : 'PENDING'}
                 </span>
               </div>
 
-              {/* Information / Metadata Body */}
+              {}
               <div className="challan-card-info">
-                
-                {/* Header: Ticket ID + Fine */}
+
+                {}
                 <div className="card-top-meta font-mono">
                   <span className="ticket-id text-cyan">TICKET CH-{100000 + challan.id}</span>
                   <span className="challan-price">₹{challan.fine_amount || 1000}</span>
                 </div>
-                
-                {/* Embossed License Plate Representation */}
+
+                {}
                 <div className="plate-ui-container mb-3">
                   <div className="license-plate-ui compact">
                     <div className="plate-ind">IND</div>
@@ -178,17 +178,17 @@ export default function HistoryGrid({ challans, onView, onDownload, onDelete }) 
                   </div>
                 </div>
 
-                {/* Violation Type */}
+                {}
                 <div className="violation-reason-hud font-mono text-xs mb-3">
                   <span className="violation-label">OFFENSE:</span>
                   <span className="violation-text text-white">
-                    {challan.reason && challan.reason.includes("Driver") ? "Rider No Helmet (194D)" : 
-                     challan.reason && challan.reason.includes("Passenger") ? "Pillion No Helmet (194D)" : 
-                     "Safety Helmet Violation (194D)"}
+                    {challan.reason && challan.reason.includes("Driver") ? "Rider No Helmet (194D)" :
+                      challan.reason && challan.reason.includes("Passenger") ? "Pillion No Helmet (194D)" :
+                        "Safety Helmet Violation (194D)"}
                   </span>
                 </div>
 
-                {/* Metadata Stack */}
+                {}
                 <div className="metadata-hud-stack font-mono text-xs">
                   <div className="meta-row">
                     <MapPin size={12} className="text-cyan" />
@@ -196,7 +196,7 @@ export default function HistoryGrid({ challans, onView, onDownload, onDelete }) 
                       {challan.location || 'Camera Zone A'}
                     </span>
                   </div>
-                  
+
                   <div className="meta-row">
                     <Calendar size={12} className="text-cyan" />
                     <span>{challan.timestamp}</span>
@@ -209,18 +209,18 @@ export default function HistoryGrid({ challans, onView, onDownload, onDelete }) 
                 </div>
               </div>
 
-              {/* Actions Footer */}
+              {}
               <div className="challan-card-actions font-mono">
-                <button 
-                  className="btn btn-secondary font-mono" 
-                  onClick={() => onView(challan)} 
+                <button
+                  className="btn btn-secondary font-mono"
+                  onClick={() => onView(challan)}
                   style={{ fontSize: '0.8rem', padding: '0.55rem' }}
                 >
                   <Eye size={12} /> TELEMETRY
                 </button>
-                <button 
-                  className="btn font-mono" 
-                  onClick={() => onDownload(challan)} 
+                <button
+                  className="btn font-mono"
+                  onClick={() => onDownload(challan)}
                   style={{ fontSize: '0.8rem', padding: '0.55rem' }}
                 >
                   <Download size={12} /> EXPORT PDF

@@ -1,18 +1,14 @@
-/* ==========================================================================
-   CIVICEYE AI: Modern Cyber-Security Traffic Control Room CSS Vibe
-   ========================================================================== */
-
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Share+Tech+Mono&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  /* Futuristic Color Palette */
+
   --bg-main: #05070e;
-  /* Deep cyber black */
+
   --bg-surface: rgba(13, 20, 38, 0.45);
-  /* Dark glass backdrop */
+
   --bg-surface-hover: rgba(22, 33, 62, 0.65);
   --border-color: rgba(0, 240, 255, 0.15);
-  /* Tech cyan border */
+
   --border-color-hover: rgba(0, 240, 255, 0.4);
 
   --neon-cyan: #00f0ff;
@@ -30,16 +26,16 @@
   --neon-success-dim: rgba(16, 185, 129, 0.15);
 
   --text-primary: #f1f5f9;
-  /* High contrast slate */
+
   --text-secondary: #94a3b8;
-  /* Muted tech blue */
+
   --text-dark: #475569;
 
-  /* Fonts */
+
   --font-sans: 'Outfit', 'Inter', system-ui, sans-serif;
   --font-mono: 'Share Tech Mono', monospace;
 
-  /* System UI config */
+
   --border-radius: 8px;
   --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   --cyber-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
@@ -47,7 +43,7 @@
   --glow-red: 0 0 12px rgba(255, 59, 48, 0.3);
 }
 
-/* Reset and Global Styles */
+
 * {
   margin: 0;
   padding: 0;
@@ -68,7 +64,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Scrollbar customization */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -87,7 +83,7 @@ body {
   background: var(--neon-cyan);
 }
 
-/* Layout Containers */
+
 .app-container {
   display: flex;
   flex-direction: column;
@@ -102,7 +98,7 @@ body {
   margin: 0 auto;
 }
 
-/* Header & Navigation */
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -193,7 +189,7 @@ body {
   font-weight: 700;
 }
 
-/* Page Titles */
+
 .page-title-section {
   margin-bottom: 2rem;
   padding-bottom: 1rem;
@@ -214,7 +210,7 @@ body {
   margin-top: 0.35rem;
 }
 
-/* Dashboard Top HUD Metrics Bar */
+
 .metrics-hud {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -344,7 +340,7 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Glass Card */
+
 .glass-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
@@ -371,7 +367,7 @@ body {
   gap: 0.6rem;
 }
 
-/* Live Dashboard Grid Layout */
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1.3fr 1fr;
@@ -391,7 +387,7 @@ body {
   gap: 1.5rem;
 }
 
-/* Custom Intake Dropdown Header */
+
 .feed-header {
   display: flex;
   justify-content: space-between;
@@ -438,7 +434,7 @@ body {
   cursor: not-allowed;
 }
 
-/* Futuristic Dropzone */
+
 .futuristic-dropzone {
   border: 1px dashed var(--border-color);
   border-radius: var(--border-radius);
@@ -460,7 +456,7 @@ body {
   box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.05);
 }
 
-/* HUD corners inside dropzone */
+
 .crosshair {
   position: absolute;
   width: 10px;
@@ -536,7 +532,7 @@ body {
   letter-spacing: 1px;
 }
 
-/* Media Preview Container with Grid brackets */
+
 .media-preview-container {
   position: relative;
   aspect-ratio: 16/9;
@@ -589,7 +585,7 @@ body {
   object-fit: contain;
 }
 
-/* Scanning Sweep Laser */
+
 .scanner-line {
   position: absolute;
   top: 0;
@@ -616,7 +612,7 @@ body {
   }
 }
 
-/* Dynamic Live Camera HUD details */
+
 .camera-overlay {
   position: absolute;
   bottom: 0.85rem;
@@ -661,7 +657,7 @@ body {
   animation: pulse-glow 1.5s infinite;
 }
 
-/* Status overlays on preview */
+
 .status-badge {
   position: absolute;
   top: 0.85rem;
@@ -730,7 +726,7 @@ body {
   justify-content: flex-end;
 }
 
-/* Configuration & Telemetry widgets */
+
 .telemetry-grid {
   display: flex;
   flex-direction: column;
@@ -799,7 +795,7 @@ body {
   color: #ffffff;
 }
 
-/* Right Panel: AI Diagnostics card */
+
 .result-card {
   min-height: 250px;
   display: flex;
@@ -939,7 +935,7 @@ body {
   gap: 1.5rem;
 }
 
-/* Violation Panel & Ticket Listing */
+
 .violations-panel {
   display: flex;
   flex-direction: column;
@@ -1025,7 +1021,7 @@ body {
   margin-bottom: 0.35rem;
 }
 
-/* Indian License Plate Styling */
+
 .license-plate-ui {
   background: #ffffff;
   border: 1.5px solid #111111;
@@ -1123,7 +1119,7 @@ body {
   font-weight: 700;
 }
 
-/* Dispatch SMS Widget */
+
 .sms-dispatch-block {
   border-top: 1px dashed rgba(255, 255, 255, 0.05);
   padding-top: 0.75rem;
@@ -1184,7 +1180,7 @@ body {
   gap: 0.5rem;
 }
 
-/* Hottest Zone Leaderboard widget */
+
 .leaderboard-header {
   display: flex;
   justify-content: space-between;
@@ -1318,7 +1314,7 @@ body {
   color: var(--text-dark);
 }
 
-/* Buttons */
+
 .btn {
   background: var(--neon-cyan);
   color: var(--bg-main);
@@ -1357,7 +1353,7 @@ body {
   box-shadow: var(--glow-cyan);
 }
 
-/* History toolbar grid */
+
 .history-section {
   display: flex;
   flex-direction: column;
@@ -1468,14 +1464,14 @@ body {
   border-color: var(--neon-cyan);
 }
 
-/* History Cards Grid Layout */
+
 .history-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1.5rem;
 }
 
-/* E-Challan Card design */
+
 .challan-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
@@ -1642,7 +1638,7 @@ body {
   background-color: rgba(5, 7, 14, 0.25);
 }
 
-/* Modals */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1665,14 +1661,14 @@ body {
   max-height: 90vh;
   overflow-y: auto;
   background-color: #111827;
-  /* Dark tailwind gray-800 for high-contrast printable container framing */
+
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
   animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Official PDF document template (Printable Area in White) */
+
 .official-challan {
   background-color: #ffffff;
   color: #1e293b;
@@ -1759,8 +1755,12 @@ body {
 .evidence-wrapper {
   border: 1px solid #cbd5e1;
   border-radius: 4px;
-  overflow: hidden;
   background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .evidence-header {
@@ -1770,17 +1770,20 @@ body {
   font-weight: 700;
   color: #475569;
   text-transform: uppercase;
+  width: 100%;
 }
 
 .evidence-img {
   width: 100%;
-  height: 180px;
-  object-fit: cover;
+  height: auto;
+  max-height: 480px;
+  object-fit: contain;
   display: block;
+  margin: 0 auto;
 }
 
 .plate-crop-img {
-  height: 60px;
+  height: 60px !important;
   object-fit: contain;
   padding: 0.4rem;
 }
@@ -1840,7 +1843,7 @@ body {
   background-color: rgba(5, 7, 14, 0.4);
 }
 
-/* Keyframes for animations */
+
 @keyframes fadeIn {
   from {
     opacity: 0;

@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import base64
 import tempfile
-
+import time
 from PIL import Image
 from dotenv import load_dotenv
 from google import genai
@@ -15,15 +15,55 @@ except ImportError:
     HAS_ML_LIBRARIES = False
 
 
+try:
+    import easyocr
+    HAS_EASYOCR = True
+except ImportError:
+    HAS_EASYOCR = False
+
+
+FRAME_SAMPLE_RATE = 10
+
+
 VIOLATION_CLASSES = {
     "driver_without_helmet",
     "passenger_without_helmet",
 }
 
 
+_LETTER_FIXES = str.maketrans("01589", "OISGB")  
+_DIGIT_FIXES  = str.maketrans("OIQSZB", "012528") 
+_LETTER_POSITIONS = {0, 1, 4, 5}
+_DIGIT_POSITIONS  = {2, 3, 6, 7, 8, 9}
+
+
 def _normalize_plate(text: str) -> str:
-    """Strip spaces/dashes and uppercase — TN 09 BT 9721 → TN09BT9721."""
-    return "".join(c for c in text.upper() if c.isalnum())
+    """
+    Strip spaces/dashes, uppercase, then apply positional OCR-error correction
+    for Indian registration plates.
+
+    Examples:
+        "KA 0O BT 9721" → "KA00BT9721"  (O→0 in digit zone)
+        "KA O9 BT 9721" → "KA09BT9721"  (O→0 in digit zone)
+        "K4 09 BT 9721" → "KA09BT9721"  (4→A in letter zone)
+    """
+    raw = "".join(c for c in text.upper() if c.isalnum())
+    if not raw:
+        return ""
+
+    chars = list(raw)
+    corrected = []
+    for i, ch in enumerate(chars):
+        if i in _LETTER_POSITIONS:
+            
+            corrected.append(ch.translate(_LETTER_FIXES) if ch.isdigit() else ch)
+        elif i in _DIGIT_POSITIONS:
+            
+            corrected.append(ch.translate(_DIGIT_FIXES) if ch.isalpha() else ch)
+        else:
+            corrected.append(ch) 
+
+    return "".join(corrected)
 
 
 def _center(box):
@@ -37,13 +77,11 @@ def _inside(cx, cy, box):
 
 
 def _dist_sq(cx, cy, box):
-    """Squared Euclidean distance from point to box center."""
     bx, by = _center(box)
     return (cx - bx) ** 2 + (cy - by) ** 2
 
 
 def _nearest(cx, cy, boxes):
-    """Return the box whose center is closest to (cx, cy). None if list empty."""
     if not boxes:
         return None
     return min(boxes, key=lambda b: _dist_sq(cx, cy, b))
@@ -54,18 +92,47 @@ class AIEngine:
     def __init__(self):
         self.model = None
         self.plate_model = None
-        self.gemini_client = None
+        self.easyocr_reader = None
 
         load_dotenv()
 
-        try:
-            api_key = os.getenv("GEMINI_API_KEY")
-            if api_key:
-                self.gemini_client = genai.Client(api_key=api_key)
-                print("[AI Engine] Gemini client loaded.")
-        except Exception as e:
-            print(f"[AI Engine] Gemini init failed: {e}")
+        self.gemini_keys = []
+        temp_keys = []
+        for key_name in os.environ.keys():
+            if key_name.startswith("GEMINI_API_KEY_"):
+                val = os.environ[key_name].strip()
+                if val:
+                    suffix = key_name[len("GEMINI_API_KEY_"):]
+                    try:
+                        num = int(suffix)
+                    except ValueError:
+                        num = float('inf')
+                    temp_keys.append((num, key_name, val))
 
+        temp_keys.sort(key=lambda x: (x[0], x[1]))
+        self.gemini_keys = [val for _, _, val in temp_keys]
+
+        if not self.gemini_keys:
+            val = (os.getenv("GEMINI_API_KEY") or "").strip()
+            if val:
+                self.gemini_keys.append(val)
+
+        print(f"[AI Engine] Discovered {len(self.gemini_keys)} Gemini API keys.")
+        self.current_key_idx = 0
+        self.use_fallback_ocr = False
+
+       
+        if HAS_EASYOCR:
+            try:
+                self.easyocr_reader = easyocr.Reader(["en"], gpu=False, verbose=False)
+                print("[AI Engine] EasyOCR fallback loaded.")
+            except Exception as e:
+                print(f"[AI Engine] EasyOCR init failed: {e}")
+        else:
+            print("[AI Engine] EasyOCR not installed — no OCR fallback available. "
+                  "Run: pip install easyocr")
+
+        
         if HAS_ML_LIBRARIES:
             try:
                 base = os.path.dirname(__file__)
@@ -85,18 +152,26 @@ class AIEngine:
         else:
             print("[AI Engine] Ultralytics not installed.")
 
-    # ------------------------------------------------------------------
-    # Gemini OCR
-    # ------------------------------------------------------------------
+    
+    
+    
 
-    def read_plate_with_gemini(self, plate_img) -> str:
-        if self.gemini_client is None:
-            return "UNKNOWN"
+    def reset_key_rotation(self):
+        self.current_key_idx = 0
+        self.use_fallback_ocr = False
+
+    def _try_gemini_with_current_key(self, plate_img):
+        if self.current_key_idx >= len(self.gemini_keys):
+            return "", False
+        key = self.gemini_keys[self.current_key_idx]
+        print(f"USING GEMINI KEY INDEX: {self.current_key_idx}")
         try:
+            client = genai.Client(api_key=key)
             temp_path = os.path.join(tempfile.gettempdir(), "temp_plate.jpg")
             cv2.imwrite(temp_path, plate_img)
             img = Image.open(temp_path)
-            response = self.gemini_client.models.generate_content(
+            time.sleep(1)
+            response = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=[
                     (
@@ -110,27 +185,61 @@ class AIEngine:
             )
             raw = response.text.strip()
             plate = _normalize_plate(raw)
-            return plate if plate else "UNKNOWN"
+            return (plate if plate else "", False)
         except Exception as e:
-            print(f"[AI Engine] Gemini OCR error: {e}")
-            return "UNKNOWN"
+            err_str = str(e).lower()
+            print(f"[AI Engine] [OCR] Gemini API error with key index {self.current_key_idx}: {e}")
+            rotatable_keywords = [
+                "429", "toomanyrequests", "too many requests", "resource_exhausted",
+                "quota exceeded", "quota", "rate limit", "rate_limit", "ratelimit",
+                "timeout", "deadline", "unavailable", "service unavailable", "exhausted"
+            ]
+            should_rotate = any(kw in err_str for kw in rotatable_keywords)
+            return "", should_rotate
 
-    # ------------------------------------------------------------------
-    # Public entry points
-    # ------------------------------------------------------------------
+    def read_plate_with_easyocr(self, plate_img) -> str:
+        if self.easyocr_reader is None:
+            print("[AI Engine] [OCR] EasyOCR not available — cannot read plate.")
+            return ""
+
+        try:
+            rgb = cv2.cvtColor(plate_img, cv2.COLOR_BGR2RGB)
+            results = self.easyocr_reader.readtext(rgb, detail=0, paragraph=True)
+            raw = " ".join(results).strip()
+            plate = _normalize_plate(raw)
+            if plate:
+                print(f"[AI Engine] [OCR] EasyOCR read: {plate}")
+            return plate if plate else ""
+        except Exception as e:
+            print(f"[AI Engine] [OCR] EasyOCR failed: {e}")
+            return ""
+
+    def read_plate(self, plate_img) -> str:
+        if self.use_fallback_ocr or not self.gemini_keys:
+            result = self.read_plate_with_easyocr(plate_img)
+            return result if result else "UNKNOWN"
+
+        while self.current_key_idx < len(self.gemini_keys):
+            result, should_rotate = self._try_gemini_with_current_key(plate_img)
+            if result:
+                return result
+            if should_rotate:
+                print(f"[AI Engine] [OCR] Rotating to next Gemini key (index: {self.current_key_idx + 1}).")
+                self.current_key_idx += 1
+            else:
+                self.current_key_idx += 1
+
+        self.use_fallback_ocr = True
+        print("[AI Engine] [OCR] All Gemini keys exhausted. Falling back to EasyOCR.")
+        result = self.read_plate_with_easyocr(plate_img)
+        return result if result else "UNKNOWN"
+
+    
+    
+    
 
     def process_image(self, image_bytes, location="Camera Zone A"):
-        """
-        Returns: list of detected_vehicle dicts, plus annotated image b64.
-
-        Each dict:
-            {
-                "vehicle_number": str,
-                "violation_type": str,
-                "processed_img_b64": str,   # full annotated frame
-                "crop_img_b64": str | None, # crop of violation box
-            }
-        """
+        self.reset_key_rotation()
         if self.model is None:
             return []
 
@@ -144,11 +253,9 @@ class AIEngine:
             print(f"[AI Engine] Image processing error: {e}")
             return []
 
-    def process_video(self, video_path, location="Camera Zone A"):
-        """
-        Returns: list of unique detected_vehicle dicts across all frames.
-        Deduplication is by normalised plate number.
-        """
+    def process_video(self, video_path, location="Camera Zone A",
+                      frame_sample_rate: int = FRAME_SAMPLE_RATE):
+        self.reset_key_rotation()
         if self.model is None:
             return []
 
@@ -156,7 +263,9 @@ class AIEngine:
         if not cap.isOpened():
             return []
 
-        seen_plates = set()
+        
+        
+        seen_keys = set()
         all_vehicles = []
         frame_count = 0
 
@@ -167,17 +276,18 @@ class AIEngine:
                     break
 
                 frame_count += 1
-                if frame_count % 5 != 0:
+                if frame_count % frame_sample_rate != 0:
                     continue
 
                 vehicles = self._run_model(frame, location)
                 for v in vehicles:
                     plate = v["vehicle_number"]
-                    key = plate if plate != "UNKNOWN" else None
-                    if key and key in seen_plates:
+                    vtype = v["violation_type"]
+                    key = (plate, vtype)
+
+                    if key in seen_keys:
                         continue
-                    if key:
-                        seen_plates.add(key)
+                    seen_keys.add(key)
                     all_vehicles.append(v)
 
         except Exception as e:
@@ -185,28 +295,27 @@ class AIEngine:
         finally:
             cap.release()
 
+        print(f"[AI Engine] Video done. Frames scanned: {frame_count // frame_sample_rate}, "
+              f"Unique violations found: {len(all_vehicles)}")
         return all_vehicles
 
-    # ------------------------------------------------------------------
-    # Core detection
-    # ------------------------------------------------------------------
+    
+    
+    
 
     def _run_model(self, img, location="Camera Zone A"):
-        """
-        Runs helmet + plate detection on a single frame.
-        Returns list of dicts (one per unique violation+plate pair).
-        """
+        """Runs helmet + plate detection on a single frame."""
         if self.model is None:
             return []
 
         original_img = img.copy()
 
-        # ── Step 1: Helmet detection ──────────────────────────────────
+        
         results = self.model.predict(source=img, conf=0.25, verbose=False)
         result = results[0]
 
-        bikes = []       # list of (x1,y1,x2,y2)
-        violations = []  # list of {"label", "box", "crop_b64"}
+        bikes = []       
+        violations = []  
 
         for box in result.boxes:
             cls_id = int(box.cls[0])
@@ -248,8 +357,8 @@ class AIEngine:
         if not violations:
             return []
 
-        # ── Step 2: Plate detection ───────────────────────────────────
-        plate_boxes = []  # list of (px1,py1,px2,py2)
+        
+        plate_boxes = []
 
         if self.plate_model is not None:
             try:
@@ -262,8 +371,7 @@ class AIEngine:
             except Exception as e:
                 print(f"[AI Engine] Plate detection error: {e}")
 
-        # ── Step 3: Annotated frame → b64 ────────────────────────────
-        # Draw camera location overlay in bottom-right corner
+        
         try:
             height, width = img.shape[:2]
             font = cv2.FONT_HERSHEY_SIMPLEX
@@ -272,62 +380,55 @@ class AIEngine:
             text = f"CAM: {location.upper()}"
             text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
             text_width, text_height = text_size
-
-            # Draw a dark background rectangle for the pill
             padding = 8
             rect_x1 = width - text_width - padding * 2 - 20
             rect_y1 = height - text_height - padding * 2 - 20
             rect_x2 = width - 20
             rect_y2 = height - 20
-
-            # Draw dark semi-transparent box
             cv2.rectangle(img, (rect_x1, rect_y1), (rect_x2, rect_y2), (11, 15, 25), -1)
-            # Draw cyan border (BGR: 255, 240, 0)
             cv2.rectangle(img, (rect_x1, rect_y1), (rect_x2, rect_y2), (255, 240, 0), 1)
-            # Draw text
             text_x = rect_x1 + padding
             text_y = rect_y2 - padding
-            cv2.putText(img, text, (text_x, text_y), font, font_scale, (255, 255, 255), thickness, cv2.LINE_AA)
-        except Exception as overlay_err:
-            print(f"[AI Engine] Location overlay error: {overlay_err}")
+            cv2.putText(img, text, (text_x, text_y), font, font_scale,
+                        (255, 255, 255), thickness, cv2.LINE_AA)
+        except Exception as e:
+            print(f"[AI Engine] Location overlay error: {e}")
 
         ok, buf = cv2.imencode(".jpg", img)
         if not ok:
             return []
         frame_b64 = base64.b64encode(buf).decode("utf-8")
 
-        # ── Step 4: Associate violations → bikes → plates ────────────
+        
         detected = []
-        seen_plates_local = set()
+        seen_plates_local = set()  
 
         for v in violations:
             vbox = v["box"]
             vcx, vcy = _center(vbox)
 
-            # ── Violation → bike: containment, fallback nearest ───────
+            
             parent_bike = None
             for bk in bikes:
                 if _inside(vcx, vcy, bk):
                     parent_bike = bk
                     break
             if parent_bike is None:
-                parent_bike = _nearest(vcx, vcy, bikes)  # fallback
+                parent_bike = _nearest(vcx, vcy, bikes)
 
-            # ── Bike → plate: containment, fallback nearest ───────────
+            
             vehicle_number = "UNKNOWN"
             matched_plate = None
 
             if parent_bike is not None:
                 bkcx, bkcy = _center(parent_bike)
 
-                # Primary: plate center inside bike box
                 for pbox in plate_boxes:
                     pcx, pcy = _center(pbox)
                     if _inside(pcx, pcy, parent_bike):
                         matched_plate = pbox
                         break
 
-                # Fallback: nearest plate to bike center
                 if matched_plate is None:
                     matched_plate = _nearest(bkcx, bkcy, plate_boxes)
 
@@ -338,17 +439,19 @@ class AIEngine:
                     max(0, px1): px2,
                 ]
                 if plate_crop is not None and plate_crop.size > 0:
-                    raw = self.read_plate_with_gemini(plate_crop)
+                    raw = self.read_plate(plate_crop)  
                     vehicle_number = _normalize_plate(raw) or "UNKNOWN"
 
-            # ── Drop UNKNOWN — don't insert unidentified challans ─────
             if vehicle_number == "UNKNOWN":
                 continue
 
-            # ── Deduplicate within this frame ─────────────────────────
-            if vehicle_number in seen_plates_local:
+            if len(vehicle_number) <= 7:
                 continue
-            seen_plates_local.add(vehicle_number)
+
+            dedup_key = (vehicle_number, v["label"])
+            if dedup_key in seen_plates_local:
+                continue
+            seen_plates_local.add(dedup_key)
 
             detected.append(
                 {

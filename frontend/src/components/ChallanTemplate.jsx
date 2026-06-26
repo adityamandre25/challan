@@ -11,9 +11,9 @@ export default function ChallanTemplate({ challan, onPay, onClose, showActions =
     if (!element) return;
 
     try {
-      // Hide buttons temporarily during capture if they are inside the ref
+      
       const canvas = await html2canvas(element, {
-        scale: 2, // Increase scale for higher quality text rendering
+        scale: 2, 
         useCORS: true,
         backgroundColor: '#FFFFFF',
       });
@@ -25,8 +25,8 @@ export default function ChallanTemplate({ challan, onPay, onClose, showActions =
         format: 'a4',
       });
 
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 295; // A4 height in mm
+      const imgWidth = 210; 
+      const pageHeight = 295; 
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       
       pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
@@ -40,7 +40,7 @@ export default function ChallanTemplate({ challan, onPay, onClose, showActions =
 
   return (
     <div className="modal-content-container">
-      {/* Modal Actions Top Header */}
+      {}
       {showActions && (
         <div style={{
           display: 'flex', 
@@ -55,7 +55,7 @@ export default function ChallanTemplate({ challan, onPay, onClose, showActions =
         </div>
       )}
 
-      {/* Printable Area */}
+      {}
       <div style={{ padding: '2rem', backgroundColor: '#F8FAFC' }}>
         <div ref={challanRef} className="official-challan">
           <div className="challan-watermark">E-CHALLAN</div>
@@ -72,7 +72,7 @@ export default function ChallanTemplate({ challan, onPay, onClose, showActions =
           </div>
 
           <div className="official-challan-body">
-            {/* Details Table */}
+            {}
             <div>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1E3A8A', marginBottom: '1rem', fontFamily: 'var(--font-display)' }}>
                 VIOLATION RECORD
@@ -122,7 +122,7 @@ export default function ChallanTemplate({ challan, onPay, onClose, showActions =
               </div>
             </div>
 
-            {/* Evidence Image Block */}
+            {}
             <div className="challan-evidence-block">
               <div className="evidence-wrapper">
                 <div className="evidence-header">Evidence Camera snapshot</div>
@@ -155,7 +155,7 @@ export default function ChallanTemplate({ challan, onPay, onClose, showActions =
         </div>
       </div>
 
-      {/* Modal Actions Bottom Footer */}
+      {}
       {showActions && (
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={downloadPDF}>

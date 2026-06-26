@@ -22,7 +22,7 @@ def init_db():
             status TEXT NOT NULL DEFAULT 'Pending'
         )
     """)
-    # Check if location column exists in the table info
+    
     cursor.execute("PRAGMA table_info(challans)")
     columns = [col[1] for col in cursor.fetchall()]
     if "location" not in columns:
@@ -63,5 +63,5 @@ def get_all_challans():
         })
     return challans
 
-# Auto initialize when loaded
+
 init_db()

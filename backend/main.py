@@ -38,9 +38,9 @@ class DeleteRequest(BaseModel):
     challan_id: int
 
 
-# ─────────────────────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────────────────────
+
+
+
 
 def _reason(violation_type: str) -> str:
     if violation_type == "driver_without_helmet":
@@ -96,9 +96,9 @@ def _build_challans(detected_vehicles: list, location: str) -> list:
     return challans
 
 
-# ─────────────────────────────────────────────────────────────
-# Routes
-# ─────────────────────────────────────────────────────────────
+
+
+
 
 @app.get("/api/history")
 def get_history():

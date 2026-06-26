@@ -6,17 +6,19 @@ import ChallanTemplate from './components/ChallanTemplate';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState('live'); // 'live' or 'history'
+  const [activeTab, setActiveTab] = useState('live'); 
   const [challans, setChallans] = useState([]);
   const [selectedChallan, setSelectedChallan] = useState(null);
   const [downloadChallan, setDownloadChallan] = useState(null);
   const downloadRef = useRef(null);
 
-  // Fetch challans from SQLite backend
+  
   const fetchChallans = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/history");
+      const response = await fetch(`${API}/api/history`);
       if (response.ok) {
         const data = await response.json();
         setChallans(data);
@@ -30,17 +32,17 @@ export default function App() {
     fetchChallans();
   }, []);
 
-  // Mark challan as Paid
+  
   const handlePayChallan = async (id) => {
     try {
-      const response = await fetch("http://localhost:8000/api/challan/pay", {
+      const response = await fetch(`${API}/api/challan/pay`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ challan_id: id })
       });
       if (response.ok) {
         fetchChallans();
-        // Update selected challan if open
+        
         if (selectedChallan && selectedChallan.id === id) {
           setSelectedChallan(prev => ({ ...prev, status: 'Paid' }));
         }
@@ -50,18 +52,18 @@ export default function App() {
     }
   };
 
-  // Delete enforcement record
+  
   const handleDeleteChallan = async (id) => {
     if (!window.confirm("Are you sure you want to permanently delete this enforcement record?")) return;
     try {
-      const response = await fetch("http://localhost:8000/api/challan/delete", {
+      const response = await fetch(`${API}/api/challan/delete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ challan_id: id })
       });
       if (response.ok) {
         fetchChallans();
-        // Close modal if deleting the selected one
+        
         if (selectedChallan && selectedChallan.id === id) {
           setSelectedChallan(null);
         }
@@ -71,7 +73,7 @@ export default function App() {
     }
   };
 
-  // Immediate PDF Download from Card Trigger
+  
   const triggerCardDownload = (challan) => {
     setDownloadChallan(challan);
   };
@@ -79,7 +81,7 @@ export default function App() {
   useEffect(() => {
     if (!downloadChallan) return;
     
-    // Tiny delay to let the off-screen element render in DOM
+    
     const generatePdfOffscreen = async () => {
       const element = downloadRef.current;
       if (!element) return;
@@ -113,7 +115,7 @@ export default function App() {
     generatePdfOffscreen();
   }, [downloadChallan]);
 
-  // --- Dynamic Dashboard Metrics ---
+  
   const todayStr = (() => {
     const today = new Date();
     const dd = String(today.getDate()).padStart(2, '0');
@@ -148,7 +150,7 @@ export default function App() {
 
   const helmetCompliance = (() => {
     if (challans.length === 0) return '98.5%';
-    // Compute a pseudo-compliance based on scale
+    
     const base = 97.4;
     const impact = Math.min(8.0, challans.length * 0.15);
     return (base - impact).toFixed(1) + '%';
@@ -156,7 +158,7 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Top Header Navigation */}
+      {}
       <header className="header">
         <div className="brand">
           <Shield className="brand-icon" />
@@ -178,7 +180,7 @@ export default function App() {
             className={`nav-btn ${activeTab === 'history' ? 'active' : ''}`}
             onClick={() => {
               setActiveTab('history');
-              fetchChallans(); // Refresh list on open
+              fetchChallans(); 
             }}
           >
             <List size={16} /> Challan History
@@ -186,10 +188,10 @@ export default function App() {
         </nav>
       </header>
 
-      {/* Main Pages */}
+      {}
       <main className="main-content">
         
-        {/* HUD Analytics Panel (Top Dashboard Metrics) */}
+        {}
         <div className="metrics-hud">
           <div className="hud-card">
             <div className="hud-card-header">
@@ -265,7 +267,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Detail/Action Modal */}
+      {}
       {selectedChallan && (
         <div className="modal-overlay" onClick={() => setSelectedChallan(null)}>
           <div onClick={(e) => e.stopPropagation()} style={{ width: '100%', maxWidth: '820px' }}>
@@ -278,13 +280,13 @@ export default function App() {
         </div>
       )}
 
-      {/* Hidden Offscreen PDF Rendering Container */}
+      {}
       {downloadChallan && (
         <div style={{
           position: 'absolute',
           left: '-9999px',
           top: '-9999px',
-          width: '794px', // Standard pixels corresponding to A4 width
+          width: '794px', 
           backgroundColor: '#FFFFFF',
           zIndex: -1000
         }}>

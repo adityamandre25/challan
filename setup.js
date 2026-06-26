@@ -4,7 +4,7 @@ const path = require('path');
 
 console.log('=== Starting Setup for Helmet Detection & E-Challan System ===\n');
 
-// 1. Install Frontend Dependencies
+
 console.log('Step 1: Installing Frontend dependencies...');
 try {
   execSync('npm install', { cwd: path.join(__dirname, 'frontend'), stdio: 'inherit' });
@@ -14,10 +14,10 @@ try {
   process.exit(1);
 }
 
-// 2. Install Backend Python Dependencies
+
 console.log('Step 2: Installing Backend Python dependencies...');
 try {
-  // Check if python is available
+  
   let pythonCmd = 'python';
   try {
     execSync('python --version', { stdio: 'ignore' });
